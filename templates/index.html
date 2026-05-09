@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Color Vision Test</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <nav class="main-nav">
+    <div class="logo">Color Vision Detector</div>
+    <div class="nav-links">
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('about') }}">About CVD</a>
+      <button onclick="toggleBW()" class="mode-btn">Dark Mode</button>
+      {% if session.get('user_id') %}
+      <a href="{{ url_for('logout') }}">Logout</a>
+      {% else %}
+      <a href="{{ url_for('login') }}">Login / Sign Up</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <section class="hero">
+    <h1>Color Vision Deficiency Detection</h1>
+    <p>Take an Ishihara/Farnsworth D-15 test/Mosaic Test and analyze your color vision.</p>
+    <button onclick="window.location.href='{{ url_for('test') }}'">Start Ishihara Test</button>
+    <br><br>
+    <button onclick="window.location.href='{{ url_for('d15') }}'">Farnsworth D-15 Test</button>
+    <br><br>
+    <button onclick="window.location.href='{{ url_for('mosaic') }}'">Mosaic Test</button>
+    <br><br>
+    <button onclick="window.location.href='{{ url_for('simulation') }}'">Try Simulation</button>
+  </section>
+
+  <div class="bubbles">
+    <span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+  </div>
+  <footer class="footer">© 2026 Color Vision Detector | Academic Project</footer>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

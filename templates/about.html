@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>About CVD</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .about-container {
+            width: 80%;
+            margin: auto;
+            margin-top: 40px;
+            text-align: left;
+        }
+
+        .about-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            padding: 40px;
+            border-radius: 25px;
+            margin-bottom: 30px;
+            transition: 0.4s;
+        }
+
+        .about-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .about-card h2 {
+            margin-bottom: 15px;
+            font-size: 22px;
+            letter-spacing: 1px;
+        }
+
+        .about-card p {
+            font-size: 15px;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        @media(max-width: 900px) {
+            .about-container {
+                width: 95%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="main-nav">
+        <div class="logo">Color Vision Detector</div>
+
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('test') }}">Ishihara</a>
+            <a href="{{ url_for('d15') }}">D-15</a>
+            <a href="{{ url_for('mosaic') }}">Mosaic</a>
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('reports') }}">Reports</a>
+            {% endif %}
+            <a href="{{ url_for('simulation') }}">Simulation</a>
+            <a href="{{ url_for('about') }}">About CDV</a>
+            <button onclick="toggleBW()" class="mode-btn">Dark Mode</button>
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+            <a href="{{ url_for('login') }}">Login / Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>About Color Vision Deficiency</h1>
+
+        <div class="about-container">
+
+            <div class="about-card">
+                <h2>What is CVD?</h2>
+                <p>
+                    Color Vision Deficiency (CVD), commonly known as color blindness,
+                    is a condition in which individuals have difficulty distinguishing
+                    certain colors due to abnormalities in the cone cells of the retina.
+                    It most commonly affects red-green color perception.
+                </p>
+            </div>
+
+            <div class="about-card">
+                <h2>Types of Color Vision Deficiency</h2>
+                <p>
+                    <strong>Protanopia:</strong> Reduced sensitivity to red light, making
+                    red colors appear darker and harder to distinguish from green.
+                    <br><br>
+                    <strong>Deuteranopia:</strong> Reduced sensitivity to green light.
+                    This is the most common type of color vision deficiency.
+                    <br><br>
+                    <strong>Tritanopia:</strong> A rare condition affecting blue-yellow
+                    color discrimination.
+                </p>
+            </div>
+
+            <div class="about-card">
+                <h2>How is it Detected?</h2>
+                <p>
+                    Color Vision Deficiency is commonly screened using Ishihara
+                    Test Plates. These plates contain colored dot patterns forming
+                    numbers that are visible only to individuals with normal color
+                    vision. Difficulty identifying these numbers may indicate
+                    a specific type of color vision deficiency.
+                </p>
+            </div>
+
+            <div class="about-card">
+                <h2>Important Note</h2>
+                <p>
+                    This web application provides a digital screening tool for
+                    awareness and educational purposes only. It is not a substitute
+                    for professional medical diagnosis. For accurate assessment,
+                    consultation with a certified ophthalmologist is recommended.
+                </p>
+            </div>
+
+        </div>
+    </section>
+
+    <div class="bubbles">
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+    </div>
+
+    <footer class="footer">
+        © 2026 Color Vision Detector | Academic Project
+    </footer>
+
+    <script>
+        function toggleBW() {
+            document.body.classList.toggle("bw-mode");
+
+            if (document.body.classList.contains("bw-mode")) {
+                localStorage.setItem("mode", "bw");
+            } else {
+                localStorage.setItem("mode", "color");
+            }
+        }
+
+        if (localStorage.getItem("mode") === "bw") {
+            document.body.classList.add("bw-mode");
+        }
+    </script>
+</body>
+
+</html>

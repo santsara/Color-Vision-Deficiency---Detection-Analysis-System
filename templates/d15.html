@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Farnsworth D-15 Color Vision Test</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .d15-wrapper { display:flex; flex-direction:column; align-items:center; gap:28px; width:100%; }
+
+        .step-cards { display:flex; flex-direction:column; gap:10px; width:90%; max-width:560px; }
+        .step-card { background:rgba(255,255,255,0.07); border-radius:14px; padding:13px 18px; text-align:left; display:flex; gap:12px; align-items:flex-start; }
+        .step-n { background:linear-gradient(135deg,#ff512f,#dd2476); border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex-shrink:0; }
+        .step-t { font-size:14px; color:#ccc; line-height:1.5; }
+        .step-t strong { color:#fff; }
+
+        .tray-box { background:rgba(255,255,255,0.06); backdrop-filter:blur(18px); border-radius:22px; padding:28px 24px; width:90%; max-width:860px; }
+        .tray-label { font-size:12px; color:#888; letter-spacing:2px; text-transform:uppercase; margin-bottom:18px; }
+
+        .seq-row { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:center; gap:8px; }
+        .seq-row::-webkit-scrollbar { height:3px; }
+        .seq-row::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:3px; }
+
+        .seq-slot { display:flex; flex-direction:column; align-items:center; }
+
+        .anchor-disc { width:60px; height:60px; border-radius:50%; border:3px solid #ffc83c; box-shadow:0 0 0 3px rgba(255,200,60,0.25), 0 4px 14px rgba(0,0,0,0.5); flex-shrink:0; }
+        .anchor-label { font-size:11px; color:#ffc83c; margin-top:5px; font-weight:600; }
+
+        .disc { width:52px; height:52px; border-radius:50%; cursor:grab; border:3px solid rgba(255,255,255,0.25); box-shadow:0 4px 12px rgba(0,0,0,0.4); transition:transform .15s, box-shadow .15s, border-color .15s; flex-shrink:0; }
+        .disc:hover { transform:translateY(-5px) scale(1.1); box-shadow:0 10px 24px rgba(0,0,0,0.6); border-color:rgba(255,255,255,0.7); }
+        .disc.dragging { opacity:0.3; cursor:grabbing; }
+        .disc.drag-over { border-color:#4facfe; transform:translateY(-6px) scale(1.12); box-shadow:0 0 0 3px rgba(79,172,254,0.4); }
+        .disc-pos { font-size:11px; color:rgba(255,255,255,0.4); margin-top:5px; font-weight:600; }
+
+        .hint { font-size:13px; color:#888; margin-top:16px; }
+
+        .action-row { display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:center; }
+        .btn-ghost { background:transparent; border:2px solid rgba(255,255,255,0.3); color:#ddd; padding:12px 30px; font-size:15px; }
+        .btn-ghost:hover { background:rgba(255,255,255,0.08); transform:scale(1.04); box-shadow:none; }
+        .note { font-size:12px; color:#666; max-width:580px; line-height:1.6; }
+
+        @media(max-width:600px) { .disc{width:42px;height:42px;} .anchor-disc{width:48px;height:48px;} .tray-box{padding:16px 10px;} }
+    </style>
+</head>
+<body>
+
+<nav class="main-nav">
+    <div class="logo">Color Vision Detector</div>
+    <div class="nav-links">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('test') }}">Ishihara</a>
+        <a href="{{ url_for('d15') }}">D-15</a>
+        <a href="{{ url_for('mosaic') }}">Mosaic</a>
+        {% if session.get('user_id') %}
+            <a href="{{ url_for('reports') }}">Reports</a>
+        {% endif %}
+        <a href="{{ url_for('simulation') }}">Simulation</a>
+        <a href="{{ url_for('about') }}">About CVD</a>
+        <button onclick="toggleBW()" class="mode-btn">Dark Mode</button>
+        {% if session.get('user_id') %}
+        <a href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+        <a href="{{ url_for('login') }}">Login / Sign Up</a>
+        {% endif %}
+    </div>
+</nav>
+
+<section class="hero">
+    <h1>Farnsworth D-15 Test</h1>
+    <p>Sort the colored discs into a smooth color sequence from START to END.</p>
+
+    <div class="d15-wrapper">
+
+        <div class="step-cards">
+            <div class="step-card"><div class="step-n">1</div><div class="step-t">The <strong>gold-outlined disc</strong> (START) is your reference color — fixed in place.</div></div>
+            <div class="step-card"><div class="step-n">2</div><div class="step-t"><strong>Drag the 14 discs</strong> so each color flows smoothly into the next.</div></div>
+            <div class="step-card"><div class="step-n">3</div><div class="step-t">Each disc should look like the <strong>closest color match</strong> to its neighbours.</div></div>
+            <div class="step-card"><div class="step-n">4</div><div class="step-t">When the sequence looks right, click <strong>Submit</strong>. No time limit.</div></div>
+        </div>
+
+        <div class="tray-box">
+            <div class="tray-label">&#9654; Your colour sequence — drag to reorder</div>
+            <div class="seq-row" id="seqRow"></div>
+            <div class="hint" id="hint">Drag any disc left or right to change its position</div>
+        </div>
+
+        <div class="action-row">
+            <button onclick="submitD15()">&#10003;&nbsp; Submit Arrangement</button>
+            <button class="btn-ghost" onclick="resetTray()">&#8635;&nbsp; Reshuffle</button>
+        </div>
+
+        <div class="note">⚠ Use a calibrated screen under normal lighting without tinted lenses. This is a screening tool only — not a substitute for clinical assessment.</div>
+
+    </div>
+</section>
+
+<form id="d15Form" method="POST" action="{{ url_for('submit_d15') }}" style="display:none;">
+    <input type="hidden" id="orderField" name="disc_order" value="">
+</form>
+
+<div class="bubbles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+<footer class="footer">© 2026 Color Vision Detector | Academic Project</footer>
+
+<script>
+// ─── Cap data ────────────────────────────────────────────────────────────────
+// 16 caps evenly spaced 22.5° apart around the hue wheel starting at purple.
+// id 0 = reference (fixed START), id 15 = end cap (fixed END).
+// Correct arrangement: 0 → 1 → 2 → … → 15
+const CAPS = [
+  { id:  0, hex: "#9351d6" },  // violet-purple  — START
+  { id:  1, hex: "#c44dd4" },  // magenta-purple
+  { id:  2, hex: "#d64daa" },  // hot pink
+  { id:  3, hex: "#d64d72" },  // rose-red
+  { id:  4, hex: "#d64d4d" },  // red
+  { id:  5, hex: "#d6804d" },  // orange
+  { id:  6, hex: "#d6b94d" },  // amber-yellow
+  { id:  7, hex: "#b8d64d" },  // yellow-green
+  { id:  8, hex: "#7ad64d" },  // lime green
+  { id:  9, hex: "#4dd66b" },  // green
+  { id: 10, hex: "#4dd6a6" },  // green-teal
+  { id: 11, hex: "#4dd6d6" },  // cyan
+  { id: 12, hex: "#4da6d6" },  // sky blue
+  { id: 13, hex: "#4d72d6" },  // cobalt blue
+  { id: 14, hex: "#6b4dd6" },  // blue-violet
+  { id: 15, hex: "#5e4dd6" },  // indigo         — END
+];
+
+const MOVABLE = [1,2,3,4,5,6,7,8,9,10,11,12,13,14];
+let order = [];       // current arrangement of movable cap ids
+let dragSrc = null;   // index being dragged
+let touchSel = null;  // index selected by first touch tap
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+}
+
+function resetTray() {
+    touchSel = null;
+    order = shuffle(MOVABLE.slice());
+    render();
+}
+
+// ─── Render ──────────────────────────────────────────────────────────────────
+function render() {
+    var row = document.getElementById("seqRow");
+    row.innerHTML = "";
+
+    function arrow() {
+        var s = document.createElement("span");
+        s.className = "seq-arrow";
+        s.textContent = "›";
+        return s;
+    }
+
+    function anchor(cap, lbl) {
+        var slot  = document.createElement("div");
+        slot.className = "seq-slot";
+        var disc  = document.createElement("div");
+        disc.className = "anchor-disc";
+        disc.style.background = cap.hex;
+        var label = document.createElement("div");
+        label.className = "anchor-label";
+        label.textContent = lbl;
+        slot.appendChild(disc);
+        slot.appendChild(label);
+        return slot;
+    }
+
+    // START anchor
+    row.appendChild(anchor(CAPS[0], "START"));
+
+    // Movable discs
+    order.forEach(function(capId, idx) {
+        var cap  = CAPS[capId];
+        var slot = document.createElement("div");
+        slot.className = "seq-slot";
+
+        var disc = document.createElement("div");
+        disc.className = "disc";
+        disc.style.background = cap.hex;
+        disc.draggable = true;
+        disc.dataset.idx = idx;
+
+        disc.addEventListener("dragstart", function(e) {
+            dragSrc = idx;
+            setTimeout(function() { disc.classList.add("dragging"); }, 0);
+            e.dataTransfer.effectAllowed = "move";
+        });
+        disc.addEventListener("dragend", function() {
+            disc.classList.remove("dragging");
+            dragSrc = null;
+        });
+        disc.addEventListener("dragover", function(e) {
+            e.preventDefault();
+            disc.classList.add("drag-over");
+        });
+        disc.addEventListener("dragleave", function() {
+            disc.classList.remove("drag-over");
+        });
+        disc.addEventListener("drop", function(e) {
+            e.preventDefault();
+            disc.classList.remove("drag-over");
+            if (dragSrc === null || dragSrc === idx) return;
+            var moved = order.splice(dragSrc, 1)[0];
+            order.splice(idx, 0, moved);
+            dragSrc = null;
+            render();
+        });
+
+        // Mobile: tap first to select, tap second to move
+        disc.addEventListener("touchstart", function(e) {
+            e.preventDefault();
+            if (touchSel === null) {
+                touchSel = idx;
+                disc.style.border = "3px solid #ffc83c";
+                disc.style.transform = "translateY(-6px) scale(1.15)";
+            } else if (touchSel === idx) {
+                touchSel = null;
+                render();
+            } else {
+                var moved = order.splice(touchSel, 1)[0];
+                var dest  = idx > touchSel ? idx - 1 : idx;
+                order.splice(dest, 0, moved);
+                touchSel = null;
+                render();
+            }
+        }, { passive: false });
+
+        var pos = document.createElement("div");
+        pos.className = "disc-pos";
+        pos.textContent = idx + 1;
+
+        slot.appendChild(disc);
+        slot.appendChild(pos);
+        row.appendChild(slot);
+
+    });
+
+    // END anchor
+    row.appendChild(anchor(CAPS[15], "END"));
+
+    // Update hint
+    var hint = document.getElementById("hint");
+    var correct = order.every(function(id, i) { return id === i + 1; });
+    hint.textContent = correct
+        ? "✓ Looks great! Click Submit when ready."
+        : "Drag any disc left or right to reorder · On mobile: tap a disc, then tap where to move it";
+}
+
+// ─── Submit ──────────────────────────────────────────────────────────────────
+function submitD15() {
+    var fullOrder = [0].concat(order).concat([15]);
+    document.getElementById("orderField").value = JSON.stringify(fullOrder);
+    document.getElementById("d15Form").submit();
+}
+
+// ─── B/W mode ────────────────────────────────────────────────────────────────
+function toggleBW() {
+    document.body.classList.toggle("bw-mode");
+    localStorage.setItem("mode", document.body.classList.contains("bw-mode") ? "bw" : "color");
+}
+if (localStorage.getItem("mode") === "bw") document.body.classList.add("bw-mode");
+
+// ─── Boot ────────────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", resetTray);
+</script>
+
+</body>
+</html>

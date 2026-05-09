@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Login - Color Vision Detector</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+            width: 250px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .form-group input {
+            width: 100%;
+            margin-top: 0;
+            box-sizing: border-box;
+        }
+
+        .error-message {
+            color: #ff512f;
+            margin-bottom: 15px;
+        }
+
+        .links {
+            margin-top: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .links a {
+            color: #4facfe;
+            text-decoration: none;
+            font-size: 15px;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #ccc;
+            padding: 14px 40px;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+            box-shadow: none;
+        }
+
+        .forgot-link {
+        color: #4facfe; 
+        font-size: 13px; 
+        text-decoration: none;
+        }
+
+        .forgot-link:hover {
+        text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="main-nav">
+        <div class="logo">Color Vision Detector</div>
+
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}">Home</a>
+            <button onclick="toggleBW()" class="mode-btn">Dark Mode</button>
+        </div>
+    </nav>
+
+    <section class="hero">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}" style="color: #ffc83c; margin-bottom: 20px;">
+            {{ message }}
+        </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+        <h1>Login</h1>
+        <p>Access your personal test history and analytics.</p>
+
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="form-group">
+                <label>Username or Email</label>
+                <input type="text" name="login_identity" required placeholder="Enter username or email">
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required placeholder="Enter your password">
+                <div style="text-align: right; margin-top: 8px;">
+                    <a href="{{ url_for('forgot_password') }}" class="forgot-link">Forgot Password?</a>
+                </div>
+            </div>
+
+            <button type="submit" style="margin-top: 15px;">Login</button>
+        </form>
+
+        <div class="links">
+            <a href="{{ url_for('signup') }}">Don't have an account? Sign up here</a>
+            <span>OR</span>
+            <button class="btn-secondary" type="button" onclick="window.location.href='{{ url_for('index') }}'">Continue Without Login</button>
+        </div>
+        
+    </section>
+
+    <div class="bubbles">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+    </div>
+
+    <script>
+        function toggleBW() {
+            document.body.classList.toggle("bw-mode");
+            localStorage.setItem("mode", document.body.classList.contains("bw-mode") ? "bw" : "color");
+        }
+        if (localStorage.getItem("mode") === "bw") {
+            document.body.classList.add("bw-mode");
+        }
+    </script>
+</body>
+
+</html>

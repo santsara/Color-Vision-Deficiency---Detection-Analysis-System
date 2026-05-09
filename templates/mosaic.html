@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Mosaic Color Blindness Test</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* ── Mosaic grid ─────────────────────────────────────────── */
+        #mosaicBoard {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+            width: 312px;
+            margin: 0 auto 20px;
+        }
+
+        .m-tile {
+            width: 46px;
+            height: 46px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+            box-sizing: border-box;
+        }
+
+        .m-tile:hover {
+            transform: scale(1.08);
+        }
+
+        .m-tile.selected {
+            border-color: #ffffff;
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.6), 0 4px 12px rgba(0,0,0,0.4);
+            transform: scale(1.10);
+        }
+
+        .m-tile.grouped-0 { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,0.5); }
+        .m-tile.grouped-1 { border-color: #34d399; box-shadow: 0 0 0 2px rgba(52,211,153,0.5); }
+        .m-tile.grouped-2 { border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96,165,250,0.5); }
+        .m-tile.grouped-3 { border-color: #f472b6; box-shadow: 0 0 0 2px rgba(244,114,182,0.5); }
+
+        /* ── Group slots ─────────────────────────────────────────── */
+        .group-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 0 auto 14px;
+        }
+
+        .group-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.08);
+            border: 1.5px solid rgba(255,255,255,0.25);
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 120px;
+        }
+
+        .group-btn .swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .group-btn:hover  { background: rgba(255,255,255,0.16); transform: translateY(-2px); }
+        .group-btn:active { transform: translateY(0); }
+        .group-btn.active-group { background: rgba(255,255,255,0.22); border-color: white; }
+
+        /* ── Action bar ──────────────────────────────────────────── */
+        .mosaic-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 4px;
+        }
+
+        .action-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: white;
+            font-size: 14px;
+            padding: 10px 22px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover  { background: rgba(79,172,254,0.3); transform: translateY(-2px); }
+        .action-btn:active { transform: translateY(0); }
+
+        .next-btn {
+            background: rgba(79,172,254,0.25);
+            border-color: rgba(79,172,254,0.6);
+        }
+
+        /* ── Instruction badge ───────────────────────────────────── */
+        .instr-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 13px;
+            opacity: 0.85;
+            margin-bottom: 14px;
+        }
+
+        /* ── Group count badges ──────────────────────────────────── */
+        .g-count {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 1px 7px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="main-nav">
+        <div class="logo">Color Vision Detector</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('test') }}">Ishihara</a>
+            <a href="{{ url_for('d15') }}">D-15</a>
+            <a href="{{ url_for('mosaic') }}">Mosaic</a>
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('reports') }}">Reports</a>
+            {% endif %}
+            <a href="{{ url_for('simulation') }}">Simulation</a>
+            <a href="{{ url_for('about') }}">About CVD</a>
+            <button onclick="toggleBW()" class="mode-btn">Dark Mode</button>
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+            <a href="{{ url_for('login') }}">Login / Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <section class="hero ishihara-page">
+        <h1>Mosaic Test</h1>
+        <p id="questionCount">Round 1 of {{ total_questions }}</p>
+
+        <div class="progress-container">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <div class="test-content" style="text-align: center;">
+
+            <p class="instr-badge" id="instrText">
+                Pick a group below, then tap tiles that belong to it
+            </p>
+
+            <!-- 6×6 tile grid -->
+            <div id="mosaicBoard"></div>
+
+            <!-- 4 group selector buttons -->
+            <div class="group-row" id="groupRow"></div>
+
+            <!-- Reset + Next -->
+            <div class="mosaic-actions">
+                <button class="action-btn" onclick="mosaicReset()">↺ Reset</button>
+                <button class="action-btn next-btn" onclick="mosaicSubmitRound()">Next →</button>
+            </div>
+
+        </div>
+
+        <form id="mosaicForm" action="{{ url_for('submit_mosaic') }}" method="post" style="display:none;">
+            <input type="hidden" id="mosaicAnswersField" name="mosaicAnswersJson" value="[]">
+        </form>
+    </section>
+
+    <div class="bubbles">
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+    </div>
+
+    <footer class="footer">
+        © 2026 Color Vision Detector | Academic Project
+    </footer>
+
+    <script>
+        const MOSAIC_DATA = {{ questions_json | safe }};
+    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        function toggleBW() {
+            document.body.classList.toggle("bw-mode");
+            localStorage.setItem("mode", document.body.classList.contains("bw-mode") ? "bw" : "color");
+        }
+        if (localStorage.getItem("mode") === "bw") {
+            document.body.classList.add("bw-mode");
+        }
+    </script>
+</body>
+</html>

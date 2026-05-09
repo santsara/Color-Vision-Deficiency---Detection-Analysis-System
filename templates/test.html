@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Ishihara Test</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+  <nav class="main-nav">
+    <div class="logo">Color Vision Detector</div>
+
+    <div class="nav-links">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('test') }}">Ishihara</a>
+        <a href="{{ url_for('d15') }}">D-15</a>
+        <a href="{{ url_for('mosaic') }}">Mosaic</a>
+        {% if session.get('user_id') %}
+        <a href="{{ url_for('reports') }}">Reports</a>
+        {% endif %}
+        <a href="{{ url_for('simulation') }}">Simulation</a>
+        <a href="{{ url_for('about') }}">About CVD</a>
+        <button onclick="toggleBW()" class="mode-btn">Dark Mode</button>
+        {% if session.get('user_id') %}
+        <a href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+        <a href="{{ url_for('login') }}">Login / Sign Up</a>
+        {% endif %}
+    </div>
+  </nav>
+
+  <section class="hero ishihara-page">
+    <h1>Ishihara Test</h1>
+    <p id="questionCount">Question 1 of {{ total_questions }}</p>
+
+    <div class="progress-container">
+      <div id="progressBar" class="progress-bar"></div>
+    </div>
+
+    <div class="test-content">
+
+      <img id="plateImage" src="{{ url_for('static', filename='images/plate1.png') }}" width="300"
+        alt="Ishihara Plate">
+
+      <input type="text" id="answerInput" placeholder="Enter number you see" tabindex="-1">
+
+      <button onclick="nextQuestion()">Next</button>
+
+    </div>
+
+    <!-- Hidden form to send Ishihara scores to Flask backend -->
+    <form id="ishiharaForm" action="{{ url_for('ishihara_submit') }}" method="post" style="display:none;">
+      <input type="hidden" id="normalScoreField" name="normalScore" value="0">
+      <input type="hidden" id="protanScoreField" name="protanScore" value="0">
+      <input type="hidden" id="deutanScoreField" name="deutanScore" value="0">
+      <input type="hidden" id="totalQuestionsField" name="totalQuestions" value="{{ total_questions }}">
+      <input type="hidden" id="answersJsonField" name="answersJson" value="[]">
+    </form>
+
+  </section>
+
+  <div class="bubbles">
+    <span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+  </div>
+
+  <footer class="footer">
+    © 2026 Color Vision Detector | Academic Project
+  </footer>
+
+  <!-- Inject shuffled plate data from Flask so script.js can read PLATE_DATA -->
+  <script>
+    // Force the browser to stay at the top of the page
+    window.scrollTo(0, 0);
+
+    // Remove focus from the input box if the browser tried to jump to it
+    const input = document.getElementById('answerInput');
+    if(input) {
+        input.blur();
+    }
+    
+    // Safely load the data (No messy image paths here, script.js handles it!)
+    const PLATE_DATA = {{ plates_json | safe }};
+  </script>
+
+  <!-- CORRECTLY load the Javascript file using Flask's url_for -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  
+  <script>
+    function toggleBW() {
+      document.body.classList.toggle("bw-mode");
+
+      if (document.body.classList.contains("bw-mode")) {
+        localStorage.setItem("mode", "bw");
+      } else {
+        localStorage.setItem("mode", "color");
+      }
+    }
+
+    if (localStorage.getItem("mode") === "bw") {
+      document.body.classList.add("bw-mode");
+    }
+  </script>
+</body>
+
+</html>

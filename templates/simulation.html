@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Color Vision Simulation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .sim-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .upload-box {
+            border: 2px dashed rgba(255, 255, 255, 0.4);
+            padding: 50px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.4s;
+            width: 60%;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .upload-box:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.02);
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 12px 25px;
+            border-radius: 30px;
+            border: none;
+            font-size: 16px;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 40px;
+            width: 90%;
+        }
+
+        .image-box {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(15px);
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .image-box h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            letter-spacing: 1px;
+        }
+
+        .image-box img {
+            max-width: 100%;
+            border-radius: 15px;
+            transition: 0.4s ease;
+        }
+
+        @media(max-width: 900px) {
+            .image-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="main-nav">
+        <div class="logo">Color Vision Detector</div>
+
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('test') }}">Ishihara</a>
+            <a href="{{ url_for('d15') }}">D-15</a>
+            <a href="{{ url_for('mosaic') }}">Mosaic</a>
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('reports') }}">Reports</a>
+            {% endif %}
+            <a href="{{ url_for('simulation') }}">Simulation</a>
+            <a href="{{ url_for('about') }}">About CVD</a>
+            <button onclick="toggleBW()" class="mode-btn">Dark Mode</button>
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+            <a href="{{ url_for('login') }}">Login / Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <section class="hero sim-wrapper">
+        <h1>Color Vision Deficiency Simulation</h1>
+
+        <label class="upload-box">
+            Click to Upload Image
+            <input type="file" id="imageUpload" hidden>
+        </label>
+
+        <div class="controls">
+            <select id="visionType">
+                <option value="normal">Normal Vision</option>
+                <option value="protanopia">Protanopia</option>
+                <option value="deuteranopia">Deuteranopia</option>
+            </select>
+
+            <button type="button" onclick="applyFilter()">Apply</button>
+            <button type="button" onclick="resetImage()">Reset</button>
+        </div>
+
+        <div class="image-grid">
+            <div class="image-box">
+                <h3>Original</h3>
+                <img id="originalImage">
+            </div>
+
+            <div class="image-box">
+                <h3>Simulated</h3>
+                <img id="simulatedImage">
+            </div>
+        </div>
+        <p class="disclaimer">
+            Simulation results are approximate and for educational demonstration only.
+        </p>
+    </section>
+
+    <div class="bubbles">
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+    </div>
+
+    <footer class="footer">
+        © 2026 Color Vision Detector | Academic Project
+    </footer>
+
+    <script>
+        const upload = document.getElementById("imageUpload");
+        const original = document.getElementById("originalImage");
+        const simulated = document.getElementById("simulatedImage");
+
+        upload.addEventListener("change", function () {
+            const file = this.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                original.src = url;
+                simulated.src = url;
+            }
+        });
+
+        function applyFilter() {
+            const type = document.getElementById("visionType").value;
+
+            if (type === "normal") {
+                simulated.style.filter = "none";
+            }
+
+            if (type === "protanopia") {
+                simulated.style.filter =
+                    "grayscale(30%) sepia(40%) hue-rotate(-20deg)";
+            }
+
+            if (type === "deuteranopia") {
+                simulated.style.filter =
+                    "grayscale(40%) sepia(20%) hue-rotate(20deg)";
+            }
+        }
+
+        function resetImage() {
+            simulated.style.filter = "none";
+            document.getElementById("visionType").value = "normal";
+        }
+
+        function toggleBW() {
+            document.body.classList.toggle("bw-mode");
+
+            if (document.body.classList.contains("bw-mode")) {
+                localStorage.setItem("mode", "bw");
+            } else {
+                localStorage.setItem("mode", "color");
+            }
+        }
+
+        if (localStorage.getItem("mode") === "bw") {
+            document.body.classList.add("bw-mode");
+        }
+    </script>
+</body>
+
+</html>

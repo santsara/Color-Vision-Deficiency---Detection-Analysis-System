@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Result</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .d15-result-wrap { margin:28px auto; max-width:720px; }
+        .d15-canvas-box { background:rgba(255,255,255,0.07); backdrop-filter:blur(18px); border-radius:20px; padding:28px; margin-bottom:24px; }
+        .d15-canvas-box h3 { margin:0 0 16px; font-size:15px; letter-spacing:1px; text-transform:uppercase; color:#ffc83c; }
+        #d15ResultCanvas { display:block; margin:0 auto; border-radius:10px; }
+        .d15-stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+        .d15-stat { background:rgba(255,255,255,0.08); backdrop-filter:blur(12px); border-radius:16px; padding:20px; text-align:center; }
+        .d15-stat h2 { margin:0; font-size:2em; color:#ffc83c; }
+        .d15-stat p  { margin:6px 0 0; font-size:13px; opacity:0.8; }
+        .d15-seq-table { width:100%; border-collapse:collapse; background:rgba(255,255,255,0.07); border-radius:14px; overflow:hidden; }
+        .d15-seq-table th, .d15-seq-table td { padding:10px 14px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1); font-size:13px; }
+        .d15-seq-table th { background:rgba(255,255,255,0.12); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.5px; }
+        .disc-swatch { display:inline-block; width:22px; height:22px; border-radius:50%; vertical-align:middle; border:2px solid rgba(255,255,255,0.3); }
+        .err-badge { display:inline-block; background:rgba(198,40,40,0.25); color:#ff8a80; border-radius:20px; padding:2px 10px; font-size:12px; }
+        .ok-badge  { display:inline-block; background:rgba(46,125,50,0.25);  color:#a5d6a7; border-radius:20px; padding:2px 10px; font-size:12px; }
+        .answer-table { margin:20px auto; border-collapse:collapse; text-align:left; width:100%; max-width:700px; }
+        .answer-table th, .answer-table td { border:1px solid rgba(255,255,255,0.15); padding:9px 14px; font-size:14px; }
+        .answer-table th { background:rgba(255,255,255,0.1); font-weight:600; }
+        .mosaic-summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:20px auto; max-width:600px; }
+        .mosaic-stat { background:rgba(255,255,255,0.08); backdrop-filter:blur(12px); border-radius:16px; padding:20px; text-align:center; }
+        .mosaic-stat h2 { margin:0; font-size:2em; color:#ffc83c; }
+        .mosaic-stat p  { margin:6px 0 0; font-size:13px; opacity:0.8; }
+        @media(max-width:600px) { .d15-stats-grid { grid-template-columns:1fr 1fr; } .mosaic-summary-grid { grid-template-columns:1fr 1fr; } }
+    </style>
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="logo">Color Vision Detector</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('test') }}">Ishihara</a>
+            <a href="{{ url_for('d15') }}">D-15</a>
+            <a href="{{ url_for('mosaic') }}">Mosaic</a>
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('reports') }}">Reports</a>
+            {% endif %}
+            <a href="{{ url_for('simulation') }}">Simulation</a>
+            <button onclick="toggleBW()" class="mode-btn">Dark Mode</button>
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+            <a href="{{ url_for('login') }}">Login / Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>Your Result</h1>
+        <p class="disclaimer">This screening tool is for awareness only and does not replace professional medical diagnosis.</p>
+
+        {% if report %}
+
+        <h2>{{ report.test_name }}</h2>
+        <p><strong>Diagnosis:</strong> {{ report.diagnosis }}</p>
+        <p><strong>Date:</strong> {{ report.timestamp }}</p>
+
+        {# ---- Ishihara ---- #}
+        {% if report.kind == 'ishihara' %}
+        {% set d = report.details %}
+        {% set s = report.summary or {} %}
+        <p><strong>Score:</strong> {{ d.normal_score or s.correct or 0 }} / {{ d.total_questions or s.total or 0 }}</p>
+        <p><strong>Protan matches:</strong> {{ d.protan_score or 0 }}</p>
+        <p><strong>Deutan matches:</strong> {{ d.deutan_score or 0 }}</p>
+        <p><strong>Accuracy:</strong> {{ d.percentage or 0 }}%</p>
+        {% if d.answers %}
+        <h3>Answer Breakdown</h3>
+        <table class="answer-table">
+            <thead><tr><th>Question</th><th>Your Answer</th><th>Correct Answer</th><th>Result</th></tr></thead>
+            <tbody>
+                {% for a in d.answers %}
+                <tr>
+                    <td>{{ a.question }}</td>
+                    <td>{{ a.userAnswer }}</td>
+                    <td>{{ a.correctAnswer }}</td>
+                    <td style="color:{{ '#a5d6a7' if a.result == 'normal' else '#ff8a80' }};">{{ 'Correct' if a.result == 'normal' else 'Incorrect' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        <br>
+        <button onclick="window.location.href='{{ url_for('download_ishihara_report') }}{% if from_history and report_id %}?id={{ report_id }}{% endif %}'">Download Ishihara PDF Report</button>
+
+        {# ---- D-15 ---- #}
+        {% elif report.kind == 'd15' %}
+        {% set s = report.summary %}
+        <div class="d15-result-wrap">
+            <div class="d15-stats-grid">
+                <div class="d15-stat"><h2>{{ s.total_error_score }}</h2><p>Total Error Score<br><small>(0 = perfect)</small></p></div>
+                <div class="d15-stat"><h2>{{ s.crossings }}</h2><p>Confusion Axis<br>Crossings</p></div>
+                <div class="d15-stat"><h2>{{ s.confusion_axis or '—' }}</h2><p>Detected<br>Confusion Axis</p></div>
+            </div>
+            <div class="d15-canvas-box">
+                <h3>Arrangement Diagram</h3>
+                <canvas id="d15ResultCanvas" width="460" height="460"></canvas>
+                <p style="font-size:12px; color:#aaa; margin-top:10px;">Grey lines = correct order &nbsp;|&nbsp; Coloured lines = your arrangement. Lines crossing the centre indicate a confusion axis.</p>
+            </div>
+            <div class="d15-canvas-box">
+                <h3>Sequence Breakdown</h3>
+                <table class="d15-seq-table">
+                    <thead><tr><th>Position</th><th>Cap</th><th>Color</th><th>Step Error</th></tr></thead>
+                    <tbody>
+                        {% for row in s.sequence %}
+                        <tr>
+                            <td>{{ row.position }}</td>
+                            <td>Cap {{ row.cap_id }}</td>
+                            <td><span class="disc-swatch" style="background:{{ row.hex }};"></span></td>
+                            <td>{% if row.step_error == 0 %}<span class="ok-badge">&#10003; 0</span>{% else %}<span class="err-badge">+{{ row.step_error }}</span>{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <button onclick="window.location.href='{{ url_for('download_report') }}{% if from_history and report_id %}?id={{ report_id }}{% endif %}'">Download D-15 PDF Report</button>
+
+        {# ---- Mosaic ---- #}
+        {% elif report.kind == 'mosaic' %}
+        {% set s = report.summary %}
+
+        <div class="mosaic-summary-grid">
+            <div class="mosaic-stat">
+                <h2>{{ s.total_correct if s.total_correct is defined else s.correct }} / {{ s.total_tiles if s.total_tiles is defined else s.total }}</h2>
+                <p>Tiles Correctly Grouped</p>
+            </div>
+            <div class="mosaic-stat">
+                <h2>{{ s.rg_correct }} / {{ s.rg_total }}</h2>
+                <p>Red-Green Plate</p>
+            </div>
+            <div class="mosaic-stat">
+                <h2>{{ s.by_correct }} / {{ s.by_total }}</h2>
+                <p>Blue-Yellow Plate</p>
+            </div>
+        </div>
+
+        {% if s.total_rg_errors is defined %}
+        <div class="mosaic-summary-grid" style="margin-top:-10px;">
+            <div class="mosaic-stat">
+                <h2 style="color:#ff8a80;">{{ s.total_rg_errors }}</h2>
+                <p>Red-Green Confusions</p>
+            </div>
+            <div class="mosaic-stat">
+                <h2 style="color:#ff8a80;">{{ s.total_tritan_errors }}</h2>
+                <p>Blue-Yellow Confusions</p>
+            </div>
+            <div class="mosaic-stat">
+                <h2>{{ "%.0f"|format(s.control_accuracy * 100) }}%</h2>
+                <p>Control Accuracy</p>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if report.details %}
+        <h3>Round Breakdown</h3>
+        <table class="answer-table">
+            <thead>
+                <tr>
+                    <th>Round</th>
+                    <th>Plate Type</th>
+                    <th>Tiles Correct</th>
+                    <th>RG Errors</th>
+                    <th>BY Errors</th>
+                    <th>Unassigned</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in report.details %}
+                {% set round_total = (a.total_assigned + a.unassigned) if (a.total_assigned is defined and a.unassigned is defined) else 36 %}
+                <tr>
+                    <td>Round {{ a.id }}</td>
+                    <td>{{ a.label if a.label is defined else a.type }}</td>
+                    <td style="color:{{ '#a5d6a7' if a.is_correct else '#ff8a80' }};">{{ a.correct }} / {{ round_total }}</td>
+                    <td style="color:{{ '#ff8a80' if a.rg_errors > 0 else 'inherit' }};">{{ a.rg_errors if a.rg_errors is defined else 0 }}</td>
+                    <td style="color:{{ '#ff8a80' if a.tritan_errors > 0 else 'inherit' }};">{{ a.tritan_errors if a.tritan_errors is defined else 0 }}</td>
+                    <td style="opacity:0.7;">{{ a.unassigned if a.unassigned is defined else 0 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        <br>
+        <button onclick="window.location.href='{{ url_for('download_mosaic_report') }}{% if from_history and report_id %}?id={{ report_id }}{% endif %}'">Download Mosaic PDF Report</button>
+
+        {% endif %}{# end kind checks #}
+
+        <br><br>
+        <button onclick="window.location.href='{{ url_for('index') }}'">Go to Home</button>
+
+        {% else %}{# no report #}
+        <p>No report data available. Please complete a test first.</p>
+        <button onclick="window.location.href='{{ url_for('index') }}'">Go to Home</button>
+        {% endif %}{# end if report #}
+
+    </section>
+
+    <div class="bubbles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <footer class="footer">© 2026 Color Vision Detector | Academic Project</footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% if report and report.kind == 'd15' %}
+    <script>
+        drawD15Diagram("d15ResultCanvas", {{ report.summary.full_order | tojson | safe }});
+    </script>
+    {% endif %}
+
+    <script>
+        function toggleBW() {
+            document.body.classList.toggle("bw-mode");
+            localStorage.setItem("mode", document.body.classList.contains("bw-mode") ? "bw" : "color");
+        }
+        if (localStorage.getItem("mode") === "bw") {
+            document.body.classList.add("bw-mode");
+        }
+    </script>
+</body>
+</html>

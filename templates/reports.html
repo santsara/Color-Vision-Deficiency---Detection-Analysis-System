@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>My Reports</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .stat-card h2 {
+            margin: 0;
+            font-size: 2em;
+        }
+
+        .stat-card p {
+            margin: 8px 0 0;
+            opacity: 0.9;
+        }
+
+        .reports-table-container {
+            width: 95%;
+            max-width: 900px;
+            margin: 30px auto;
+            overflow-x: auto;
+        }
+
+        .reports-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .reports-table th,
+        .reports-table td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .reports-table th {
+            background: rgba(255, 255, 255, 0.12);
+            font-weight: 600;
+        }
+
+        .reports-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .reports-table tr.clickable {
+            cursor: pointer;
+        }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 40px 0;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            padding: 50px;
+            border-radius: 20px;
+            position: relative;
+            height: 300px;
+        }
+
+        .chart-container h3 {
+            margin: 0 0 15px;
+            font-size: 1.1em;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            opacity: 0.8;
+        }
+
+        /* Badge for test type in table */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .badge-ishihara { background: rgba(255,152,0,0.2); color: #ffb74d; }
+        .badge-d15      { background: rgba(33,150,243,0.2); color: #64b5f6; }
+        .badge-mosaic   { background: rgba(156,39,176,0.2); color: #ce93d8; }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="main-nav">
+        <div class="logo">Color Vision Detector</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('test') }}">Ishihara</a>
+            <a href="{{ url_for('d15') }}">D-15</a>
+            <a href="{{ url_for('mosaic') }}">Mosaic</a>
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('reports') }}">Reports</a>
+            {% endif %}
+            <a href="{{ url_for('simulation') }}">Simulation</a>
+            <a href="{{ url_for('about') }}">About CVD</a>
+            <button onclick="toggleBW()" class="mode-btn">Dark Mode</button>
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+            <a href="{{ url_for('login') }}">Login / Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>Reports & Analytics</h1>
+
+        <!-- Summary stats: 4 cards (Total, Ishihara, D-15, Mosaic) -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h2>{{ total_count }}</h2>
+                <p>Total Tests Taken</p>
+            </div>
+            <div class="stat-card">
+                <h2>{{ ishihara_count }}</h2>
+                <p>Ishihara Tests</p>
+            </div>
+            <div class="stat-card">
+                <h2>{{ d15_count }}</h2>
+                <p>D-15 Tests</p>
+            </div>
+            <div class="stat-card">
+                <h2>{{ mosaic_count }}</h2>
+                <p>Mosaic Tests</p>
+            </div>
+        </div>
+
+        <!-- Last result banner -->
+        <div style="text-align:center; margin-bottom:10px; opacity:0.85; text-shadow: 0 0 5px rgba(255,255,255,0.3); font-size:25px;">
+            <strong>Latest Result:</strong>
+            {% if tests %}{{ tests[0].diagnosis }}{% else %}—{% endif %}
+        </div>
+
+        <!-- Test history table -->
+        <div class="reports-table-container">
+            <h3>Test History</h3>
+            {% if tests %}
+            <table class="reports-table">
+                <thead>
+                    <tr>
+                        <th>Test #</th>
+                        <th>Test Type</th>
+                        <th>Score</th>
+                        <th>Result</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in tests %}
+                    <tr class="clickable" onclick="window.location.href='{{ url_for('report_detail', report_id=t.id) }}'">
+                        <td>{{ loop.revindex }}</td>
+                        <td>
+                            <span class="badge badge-{{ t.test_type }}">{{ t.test_type|capitalize }}</span>
+                        </td>
+                        <td>{{ t.score }}/{{ t.total_questions }}</td>
+                        <td>{{ t.diagnosis }}</td>
+                        <td>{{ t.timestamp }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>No reports yet. Complete an Ishihara, D-15, or Mosaic test to see your results here.</p>
+                {#<a href="{{ url_for('test') }}" style="margin-right:10px;">Take Ishihara Test</a>
+                <a href="{{ url_for('d15') }}" style="margin-right:10px;">Take D-15 Test</a>
+                <a href="{{ url_for('mosaic') }}">Take Mosaic Test</a>#}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-row">
+            <div class="chart-container">
+                <h3>Diagnosis Distribution</h3>
+                <canvas id="pieChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Tests Over Time</h3>
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        © 2026 Color Vision Detector | Academic Project
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const tests = {{ tests | tojson | safe }};
+
+            // Pie chart: Normal Vision, Red-Green Deficiency, Blue-Yellow Deficiency
+            const diagnosisCounts = {
+                "Normal": 0,
+                "Red-Green": 0,
+                "Blue-Yellow": 0,
+                "Other": 0
+            };
+
+            tests.forEach(t => {
+                const d = (t.diagnosis || "").toLowerCase();
+                if (d.includes("normal") || d.includes("no color") || d.includes("no deficiency")) {
+                    diagnosisCounts["Normal"]++;
+                } else if (d.includes("red-green") || d.includes("protan") || d.includes("deutan") || d.includes("green")) {
+                    diagnosisCounts["Red-Green"]++;
+                } else if (d.includes("blue-yellow") || d.includes("yellow") || d.includes("tritan")) {
+                    diagnosisCounts["Blue-Yellow"]++;
+                } else {
+                    diagnosisCounts["Other"]++;
+                }
+            });
+
+            const pieCtx = document.getElementById("pieChart").getContext("2d");
+            new Chart(pieCtx, {
+                type: "pie",
+                data: {
+                    labels: ["Normal Vision", "Red-Green Deficiency", "Blue-Yellow Deficiency", "Other"],
+                    datasets: [{
+                        data: [
+                            diagnosisCounts["Normal"],
+                            diagnosisCounts["Red-Green"],
+                            diagnosisCounts["Blue-Yellow"],
+                            diagnosisCounts["Other"]
+                        ],
+                        backgroundColor: [
+                            "rgba(76, 175, 80, 0.8)",
+                            "rgba(255, 152, 0, 0.8)",
+                            "rgba(33, 150, 243, 0.8)",
+                            "rgba(158, 158, 158, 0.8)"
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: "bottom",
+                            labels: { color: "white" }
+                        }
+                    }
+                }
+            });
+
+            // Bar chart: Tests per date
+            const dateCounts = {};
+            tests.forEach(t => {
+                const ts = t.timestamp || "";
+                const date = ts.split(" ")[0] || ts;
+                dateCounts[date] = (dateCounts[date] || 0) + 1;
+            });
+            const sortedDates = Object.keys(dateCounts).sort();
+            const barLabels = sortedDates.map(d => {
+                const parts = d.split("-");
+                if (parts.length === 3) return parts[2] + " " + ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(parts[1])-1];
+                return d;
+            });
+            const barData = sortedDates.map(d => dateCounts[d]);
+
+            const barCtx = document.getElementById("barChart").getContext("2d");
+            new Chart(barCtx, {
+                type: "bar",
+                data: {
+                    labels: barLabels.length ? barLabels : ["No Data"],
+                    datasets: [{
+                        label: "Tests Taken",
+                        data: barData.length ? barData : [0],
+                        backgroundColor: "rgba(79, 172, 254, 0.7)",
+                        borderRadius: 8,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: "white" },
+                            grid: { color: "rgba(255,255,255,0.1)" }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: "white", stepSize: 1 },
+                            grid: { color: "rgba(255,255,255,0.1)" }
+                        }
+                    }
+                }
+            });
+        });
+
+        function toggleBW() {
+            document.body.classList.toggle("bw-mode");
+            localStorage.setItem("mode", document.body.classList.contains("bw-mode") ? "bw" : "color");
+        }
+        if (localStorage.getItem("mode") === "bw") {
+            document.body.classList.add("bw-mode");
+        }
+    </script>
+</body>
+
+</html>

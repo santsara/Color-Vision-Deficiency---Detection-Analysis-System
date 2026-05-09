@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .dashboard-title {
+            margin-bottom: 20px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            margin-top: 50px;
+        }
+
+        .card {
+            padding: 60px;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(25px);
+            cursor: pointer;
+            font-size: 22px;
+            font-weight: bold;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease;
+            animation: cardEntry 1s ease forwards;
+            opacity: 0;
+            transform-style: preserve-3d;
+            text-align: center;
+        }
+
+        @keyframes cardEntry {
+            from {
+                transform: translateY(60px) rotateX(20deg);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0) rotateX(0deg);
+                opacity: 1;
+            }
+        }
+
+        .card:hover {
+            transform: translateY(-12px) scale(1.07) rotateX(5deg);
+            box-shadow: 0 35px 80px rgba(0, 0, 0, 0.7);
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            inset: -3px;
+            border-radius: 30px;
+            background: linear-gradient(45deg,
+                    #00f2fe,
+                    #4facfe,
+                    #6a11cb,
+                    #00f2fe);
+            background-size: 300% 300%;
+            animation: borderMove 6s linear infinite;
+            z-index: -1;
+            filter: blur(25px);
+            opacity: 0;
+            transition: 0.5s;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        @keyframes borderMove {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            100% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -120%;
+            width: 120%;
+            height: 100%;
+            background: linear-gradient(120deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.3),
+                    transparent);
+            transition: 0.8s;
+        }
+
+        .card:hover::after {
+            left: 120%;
+        }
+
+        .icon {
+            font-size: 55px;
+            margin-bottom: 25px;
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+
+        @keyframes floatIcon {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        @media(max-width: 900px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .gif {
+            width: 80px;
+            height: 80px;
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <nav class="main-nav">
+    <div class="logo">Color Vision Detector</div>
+
+    <div class="nav-links">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('test') }}">Ishihara</a>
+        <a href="{{ url_for('d15') }}">D-15</a>
+        <a href="{{ url_for('mosaic') }}">Mosaic</a>
+        {% if session.get('user_id') %}
+            <a href="{{ url_for('reports') }}">Reports</a>
+        {% endif %}
+        
+        <a href="{{ url_for('simulation') }}">Simulation</a>
+        <a href="{{ url_for('about') }}">About CVD</a>
+        <button onclick="toggleBW()" class="mode-btn">Dark Mode</button>
+        
+        {% if session.get('user_id') %}
+            <a href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+            <a href="{{ url_for('login') }}">Login / Sign Up</a>
+        {% endif %}
+    </div>
+</nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<section class="hero">
+    <div class="status-header" style="margin-bottom: 40px;">
+        {% if session.get('user_id') %}
+            <h1 class="dashboard-title">Welcome, {{ session['user_name'] }}</h1>
+            <p>Your recent test activity:</p>
+            
+            {% if user_history %}
+            <div style="background: rgba(255,255,255,0.05); border-radius: 15px; padding: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2); color: #ffc83c;">
+                        <th style="padding: 10px;">Date</th>
+                        <th style="padding: 10px;">Test</th>
+                        <th style="padding: 10px;">Result</th>
+                    </tr>
+                    {% for test in user_history %}
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 10px;">{{ test.timestamp.split(' ')[0] }}</td>
+                        <td style="padding: 10px;">{{ test.test_type|capitalize }}</td>
+                        <td style="padding: 10px;">{{ test.diagnosis }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% else %}
+                <p style="color: #ffc83c;">No previous history found. Start your first test below!</p>
+            {% endif %}
+
+        {% else %}
+            <h1 class="dashboard-title">Global Statistics</h1>
+            <p style="font-size: 18px; margin-bottom: 25px;">Statistics from <strong>{{ global_stats.total }}</strong> tests taken globally</p>
+
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 30px; max-width: 900px;
+                    margin: 0 auto 40px auto; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+                    backdrop-filter: blur(10px);">
+                <div style="position: relative; min-height: 600px; width: 100%;">
+                    <canvas id="globalStatsChart"></canvas>
+                </div>
+            </div>
+
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const canvas = document.getElementById('globalStatsChart');
+                    if (!canvas) return; 
+                    
+                    const ctx = canvas.getContext('2d');
+                    
+                    const extendedColors = [
+                        '#00f2fe', '#4facfe', '#32ccbc', '#90f7ec', '#ffc83c', 
+                        '#ffb129', '#f6d365', '#fda085', '#be6e5e', '#ff758c', 
+                        '#ff7eb3', '#dd2476', '#a18cd1', '#fbc2eb', '#84fab0', 
+                        '#8fd3f4', '#fccb90', '#d57eeb', '#e0c3fc', '#8ec5fc',
+                        '#40e0d0', '#ff8c00', '#ff0080', '#c2e59c'
+                    ];
+
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: {{ global_stats.labels | tojson }},
+                            datasets: [{
+                                data: {{ global_stats.data | tojson }},
+                                backgroundColor: extendedColors,
+                                borderWidth: 2,
+                                borderColor: 'rgba(255,255,255,0.1)',
+                                hoverOffset: 15
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            layout: {
+                                padding: 20
+                            },
+                            plugins: {
+                                legend: {
+                                    // Moves the legend to the right side on desktop screens for readability
+                                    position: window.innerWidth > 800 ? 'right' : 'bottom', 
+                                    display: true,
+                                    labels: {
+                                        color: 'white',
+                                        padding: 15, 
+                                        usePointStyle: true, 
+                                        font: {
+                                            size: 13, 
+                                            family: "'Segoe UI', sans-serif"
+                                        }
+                                    }
+                                }
+                            },
+                            cutout: '55%' 
+                        }
+                    });
+                });
+            </script>
+        {% endif %}
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="card" onclick="goTest()" style="animation-delay: 0.1s;">
+            <div class="icon">🎨</div>
+            Ishihara Test
+        </div>
+
+        <div class="card" onclick="god15()" style="animation-delay: 0.2s;">
+            <div class="icon"><img src='static/images/wheel.png' class="gif"></div>
+            D-15 Test
+        </div>
+
+        <div class="card" onclick="gomosaic()" style="animation-delay: 0.2s;">
+            <div class="icon"><img src='static/images/color-box.png' class="gif"></div>
+            Mosaic Test
+        </div>
+
+        {#
+        {% if session.get('user_id') %}
+        <div class="card" onclick="goReports()" style="animation-delay: 0.3s;">
+            <div class="icon">📊</div>
+            My Reports
+        </div>
+        {% else %}
+        <div class="card" onclick="window.location.href='/signup'" style="animation-delay: 0.3s;">
+            <div class="icon">📝</div>
+            Sign Up to Save
+        </div>
+        {% endif %} 
+        #}
+
+        <div class="card" onclick="goSimulation()" style="animation-delay: 0.4s;">
+            <div class="icon">👁️</div>
+            Simulation
+        </div>
+    </div>
+</section>
+
+        
+    </section>
+
+    <div class="bubbles">
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+    </div>
+
+    <footer class="footer">
+        © 2026 Color Vision Detector | Academic Project
+    </footer>
+
+    <script>
+        function goTest() {
+            window.location.href = "{{ url_for('test') }}";
+        }
+
+        function god15() {
+            window.location.href = "{{ url_for('d15') }}";
+        }
+
+        function goReports() {
+            window.location.href = "{{ url_for('reports') }}";
+        }
+
+        function goSimulation() {
+            window.location.href = "{{ url_for('simulation') }}";
+        }
+
+        function toggleBW() {
+            document.body.classList.toggle("bw-mode");
+
+            if (document.body.classList.contains("bw-mode")) {
+                localStorage.setItem("mode", "bw");
+            } else {
+                localStorage.setItem("mode", "color");
+            }
+        }
+
+        if (localStorage.getItem("mode") === "bw") {
+            document.body.classList.add("bw-mode");
+        }
+    </script>
+    {% if auto_download %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Automatically trigger the file download
+            window.location.href = "{{ auto_download | safe }}";
+        });
+    </script>
+    {% endif %}
+</body>
+
+</html>

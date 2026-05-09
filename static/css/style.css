@@ -1,0 +1,538 @@
+/* Copied from original style.css to static folder for Flask */
+
+/* ================= GLOBAL ================= */
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  color: white;
+  text-align: center;
+  overflow-x: hidden;
+  background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364, #1c1c3c);
+  background-size: 400% 400%;
+  animation: gradientMove 12s ease infinite;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+body::before,
+body::after {
+  content: "";
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: 0;
+}
+
+body::before {
+  background: rgba(255, 81, 47, 0.3);
+  top: -150px;
+  left: -150px;
+  animation: float1 8s infinite alternate ease-in-out;
+}
+
+body::after {
+  background: rgba(106, 17, 203, 0.3);
+  bottom: -150px;
+  right: -150px;
+  animation: float2 10s infinite alternate ease-in-out;
+}
+
+@keyframes float1 {
+  from {
+    transform: translate(0, 0);
+  }
+
+  to {
+    transform: translate(60px, 60px);
+  }
+}
+
+@keyframes float2 {
+  from {
+    transform: translate(0, 0);
+  }
+
+  to {
+    transform: translate(-60px, -60px);
+  }
+}
+
+/* ================= NAVBAR ================= */
+
+nav {
+  padding: 25px;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 2;
+}
+
+.test-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 25px;
+}
+
+/* ================= GLASS CARD ================= */
+
+/* Find this in style.css and change smooth to auto */
+html {
+  scroll-behavior: auto !important;
+}
+
+/* Update your fadeIn animation to be more stable */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px); /* Reduced from 60px to prevent "jumping" */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Specific fix for Ishihara jumping */
+.ishihara-page {
+    opacity: 0;
+    /* Use a smaller movement (20px) to prevent triggering browser scroll-anchoring */
+    animation: ishiharaRise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards !important;
+}
+
+@keyframes ishiharaRise {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Force the HTML to stay still */
+html {
+    scroll-behavior: auto !important;
+    overflow-anchor: none !important; /* This stops the browser from "anchoring" to the input */
+}
+
+/* Ensure the hover effect from your original CSS still works */
+.ishihara-page:hover {
+    transform: translateY(-8px) scale(1.02) !important;
+}
+
+.hero {
+  margin: 140px auto;
+  width: 60%;
+  padding: 60px;
+  border-radius: 25px;
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  animation: fadeIn 1.5s ease;
+  position: relative;
+  z-index: 2;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.hero:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(60px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================= HEADING ================= */
+
+h1 {
+  font-size: 60px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #ffc83c;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  animation: goldShine 3s ease-in-out infinite alternate;
+  text-shadow:
+    0 4px 15px rgba(0, 0, 0, 0.6),
+    0 0 25px rgba(255, 200, 60, 0.7);
+}
+
+@keyframes goldShine {
+  from {
+    text-shadow:
+      0 4px 15px rgba(0, 0, 0, 0.6),
+      0 0 15px rgba(255, 200, 60, 0.6);
+  }
+
+  to {
+    text-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.7),
+      0 0 40px rgba(255, 200, 60, 1);
+  }
+}
+
+h1::after {
+  content: "";
+  display: block;
+  width: 120px;
+  height: 4px;
+  margin: 15px auto 0;
+  background: linear-gradient(90deg, #ff512f, #dd2476);
+  animation: expandLine 2s ease forwards;
+}
+
+@keyframes expandLine {
+  from {
+    width: 0;
+  }
+
+  to {
+    width: 120px;
+  }
+}
+
+p {
+  font-size: 20px;
+  margin-bottom: 40px;
+  color: #ddd;
+  letter-spacing: 1px;
+}
+
+button {
+  padding: 16px 45px;
+  background: linear-gradient(45deg, #ff512f, #dd2476);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+button:hover {
+  transform: scale(1.12);
+  box-shadow: 0 20px 40px rgba(255, 80, 100, 0.6);
+}
+
+button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 120%;
+  height: 100%;
+  background: linear-gradient(120deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent);
+  transition: 0.6s;
+}
+
+button:hover::before {
+  left: 120%;
+}
+
+input {
+  padding: 15px;
+  width: 250px;
+  border-radius: 30px;
+  border: none;
+  outline: none;
+  text-align: center;
+  font-size: 16px;
+  margin-top: 15px;
+}
+
+.bubbles {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bubbles span {
+  position: absolute;
+  bottom: -150px;
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  backdrop-filter: blur(5px);
+  animation: rise 15s infinite ease-in;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+}
+
+.bubbles span:nth-child(1) {
+  left: 10%;
+  animation-duration: 12s;
+}
+
+.bubbles span:nth-child(2) {
+  left: 25%;
+  animation-duration: 18s;
+  width: 40px;
+  height: 40px;
+}
+
+.bubbles span:nth-child(3) {
+  left: 40%;
+  animation-duration: 14s;
+}
+
+.bubbles span:nth-child(4) {
+  left: 55%;
+  animation-duration: 20s;
+  width: 80px;
+  height: 80px;
+}
+
+.bubbles span:nth-child(5) {
+  left: 70%;
+  animation-duration: 16s;
+}
+
+.bubbles span:nth-child(6) {
+  left: 85%;
+  animation-duration: 22s;
+  width: 50px;
+  height: 50px;
+}
+
+@keyframes rise {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-1200px);
+    opacity: 0;
+  }
+}
+
+.main-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 50px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(15px);
+}
+
+.nav-links a {
+  margin-left: 20px;
+  text-decoration: none;
+  color: white;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.nav-links a:hover {
+  color: #4facfe;
+}
+
+body {
+  animation: pageFade 0.6s ease;
+}
+
+@keyframes pageFade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.disclaimer {
+  margin-top: 25px;
+  font-size: 13px;
+  opacity: 0.7;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.footer {
+  margin-top: 60px;
+  padding: 20px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.mode-btn {
+  margin-left: 15px;
+  padding: 6px 15px;
+  border-radius: 20px;
+  border: none;
+  background: linear-gradient(45deg, #444, #222);
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* --- REPLACE THIS SECTION IN style.css --- */
+
+/* 1. Remove the filter from the body so it doesn't force images to gray */
+body.bw-mode {
+  background: #000 !important;
+  color: #fff !important;
+}
+
+/* 2. Apply grayscale only to UI elements, NOT the test content */
+body.bw-mode nav, 
+body.bw-mode .hero h1, 
+body.bw-mode .hero p, 
+body.bw-mode .bubbles,
+body.bw-mode .footer,
+body.bw-mode .progress-container,
+body.bw-mode .mode-btn {
+  filter: grayscale(100%);
+}
+
+/* 3. This is the "Shield" that keeps your images colorful */
+body.bw-mode #plateImage,
+body.bw-mode .test-content img,
+body.bw-mode .disc,
+body.bw-mode .anchor-disc {
+  filter: none !important;
+  -webkit-filter: none !important;
+  background-image: unset !important; /* Prevents the 'background-image: none' rule from hiding them */
+}
+
+/* 4. Fix the hero box transparency for B/W mode */
+body.bw-mode .hero {
+  background: #111 !important;
+  border: 1px solid #444;
+  backdrop-filter: none !important;
+}
+
+/* 5. Turn buttons dark and remove colorful gradients */
+body.bw-mode button {
+  background: #222 !important;
+  color: #fff !important;
+  border: 1px solid #444 !important;
+  background-image: none !important; /* Removes the orange/pink gradient */
+  box-shadow: none !important;
+  position: relative;
+  overflow: hidden; /* This "clips" the flash so it stays inside the button */
+  transition: all 0.3s ease;
+}
+
+/* 6. The "Flash" Layer (The white shine) */
+body.bw-mode button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150%; /* Start the shine off-screen to the left */
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.4), /* The white flash color */
+    transparent
+  );
+  transition: all 0.6s ease;
+}
+
+/* 7. Hover Effects: Darken background and trigger the flash */
+body.bw-mode button:hover {
+  background: #333 !important;
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1) !important;
+}
+
+body.bw-mode button:hover::before {
+  left: 150%; /* Move the shine all the way to the right */
+}
+
+/* --- DASHBOARD CARDS B/W MODE FLASH --- */
+
+/* 1. Reset cards: Dark background, remove colorful animated borders */
+body.bw-mode .card {
+    background: #111 !important;
+    border: 1px solid #444 !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    position: relative;
+    overflow: hidden; /* Clips the flash inside the card */
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* 2. Hide the colorful glowing border pseudo-element in B/W mode */
+body.bw-mode .card::before {
+    display: none !important;
+}
+
+/* 3. Create the White Flash layer */
+body.bw-mode .card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -150%; /* Start off-screen */
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        120deg,
+        transparent,
+        rgba(255, 255, 255, 0.3), /* The white flash */
+        transparent
+    );
+    transition: all 0.7s ease;
+    z-index: 1; /* Ensure it appears above the dark background */
+}
+
+/* 4. Hover Trigger: Darken and Slide the Flash */
+body.bw-mode .card:hover {
+    background: #1a1a1a !important;
+    transform: translateY(-12px) scale(1.05) !important;
+    box-shadow: 0 20px 40px rgba(255, 255, 255, 0.1) !important;
+}
+
+body.bw-mode .card:hover::after {
+    left: 150%; /* Move flash across the card */
+}
